@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle: {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm border-0 overflow-hidden">
+            {% if book.cover_url %}
+                <img src="{{ book.cover_url }}" class="img-fluid w-100" alt="Portada de {{ book.title }}" style="object-fit: cover; min-height: 400px;">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="min-height: 400px;">
+                    <span class="text-muted">Sin portada disponible</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h2 mb-3">{{ book.title }}</h1>
+
+                <div class="row g-3">
+                    <div class="col-md-6"><p><strong>Autor:</strong> {{ book.author }}</p></div>
+                    <div class="col-md-6"><p><strong>Editorial:</strong> {{ book.publisher or 'N/A' }}</p></div>
+                    <div class="col-md-6"><p><strong>Año:</strong> {{ book.year or 'N/A' }}</p></div>
+                    <div class="col-md-6"><p><strong>Género:</strong> {{ book.genre }}</p></div>
+                    <div class="col-12">
+                        <strong>Disponibilidad:</strong>
+                        {% if book.is_available %}
+                            <span class="badge bg-success">Disponible</span>
+                        {% else %}
+                            <span class="badge bg-danger">No disponible</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+                <h5>Sinopsis</h5>
+                <p>{{ book.synopsis or 'No hay sinopsis disponible.' }}</p>
+
+                <hr>
+                <h5>Calificación promedio</h5>
+                <p>
+                    {% if avg_rating %}
+                        <span class="text-warning">★</span> {{ "%.1f"|format(avg_rating) }} / 5
+                    {% else %}
+                        <span class="text-muted">Sin calificaciones todavía</span>
+                    {% endif %}
+                </p>
+
+                <div class="d-flex gap-2 my-4">
+                    {% if session.get('user_id') and book.is_available %}
+                        <form method="POST" action="{{ url_for('borrow_book', book_id=book.idBook) }}">
+                            <button type="submit" class="btn btn-primary">Solicitar préstamo</button>
+                        </form>
+                    {% endif %}
+                    <a href="#reviews" class="btn btn-outline-secondary">Ver reseñas</a>
+                </div>
+
+                <div id="reviews" class="mt-5">
+                    <h5 class="border-bottom pb-2">Reseñas de usuarios</h5>
+                    {% if reviews %}
+                        <div class="list-group list-group-flush">
+                            {% for review in reviews %}
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1">{{ review.user_name }}</h6>
+                                        <small class="text-muted">{{ review.created_at }}</small>
+                                    </div>
+                                    <div class="text-warning mb-1">
+                                        {% for i in range(review.rating|int) %}★{% endfor %}
+                                    </div>
+                                    <p class="mb-1 small">{{ review.comment }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small">Sé el primero en escribir una reseña.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

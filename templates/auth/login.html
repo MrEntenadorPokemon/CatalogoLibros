@@ -1,0 +1,38 @@
+<!--
+formulario de login:
+email
+contraseña
+cerrar sesión (HU03)
+-->
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-5">
+        <div class="card card-custom bg-soft">
+            <div class="card-body p-4 p-md-5">
+                <h1 class="h3 text-center mb-4 text-accent">Iniciar sesión</h1>
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo electrónico</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="********" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary-custom">Entrar</button>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-custom">Crear cuenta</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

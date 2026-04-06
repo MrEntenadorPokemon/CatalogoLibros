@@ -1,0 +1,96 @@
+<!--
+Ver catálogo
+Buscar libros
+Filtrar (para cuando sea necesario agregar)
+
+incluye:
+lista de libros
+formulario de búsqueda (input + botón)
+-->
+
+{% extends "base.html" %}
+
+{% block title %}Catálogo de libros{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="h2 mb-1 text-accent">Catálogo de libros</h1>
+        <p class="mb-0 text-muted">Explora, busca y filtra títulos disponibles.</p>
+    </div>
+</div>
+
+<div class="card card-custom bg-soft mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('catalog') }}" class="row g-3 align-items-end">
+            <div class="col-12 col-md-6">
+                <label for="q" class="form-label">Buscar</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="q"
+                    name="q"
+                    value="{{ request.args.get('q', '') }}"
+                    placeholder="Título, autor o género"
+                >
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label for="genre" class="form-label">Filtrar por género</label>
+                <select class="form-select" id="genre" name="genre">
+                    <option value="">Todos</option>
+                    {% for g in genres %}
+                        <option value="{{ g }}" {% if request.args.get('genre') == g %}selected{% endif %}>
+                            {{ g }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary-custom">Buscar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if books and books|length > 0 %}
+    <div class="row g-4">
+        {% for book in books %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card card-custom h-100 bg-white">
+                    {% if book.cover_url %}
+                        <img src="{{ book.cover_url }}" class="card-img-top" alt="Portada de {{ book.title }}" style="height: 320px; object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-soft" style="height: 320px;">
+                            <span class="text-muted">Sin portada</span>
+                        </div>
+                    {% endif %}
+
+                    <div class="card-body d-flex flex-column">
+                        <h2 class="h5 card-title mb-2">{{ book.title }}</h2>
+                        <p class="mb-1"><strong>Autor:</strong> {{ book.author }}</p>
+                        <p class="mb-1"><strong>Género:</strong> {{ book.genre }}</p>
+
+                        {% if book.avg_rating is defined and book.avg_rating is not none %}
+                            <p class="mb-3"><strong>Calificación:</strong> {{ "%.1f"|format(book.avg_rating) }}/5</p>
+                        {% else %}
+                            <p class="mb-3 text-muted"><strong>Calificación:</strong> Sin valoraciones</p>
+                        {% endif %}
+
+                        <div class="mt-auto d-grid">
+                            <a href="{{ url_for('book_detail', book_id=book.idBook) }}" class="btn btn-primary-custom">
+                                Ver detalle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-warning alert-custom">
+        No se encontraron libros con los criterios actuales.
+    </div>
+{% endif %}
+{% endblock %}

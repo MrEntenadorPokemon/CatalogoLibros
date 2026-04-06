@@ -1,0 +1,82 @@
+:root {
+    --color-dark: #4E1D04;
+    --color-brown: #AD6A34;
+    --color-sand: #DCBE87;
+    --color-red: #EF5D58;
+    --color-bluegray: #517174;
+    --color-green: #325453;
+}
+
+body {
+    font-family: "Times New Roman", Times, serif;
+    background-color: #f8f5f0;
+    color: var(--color-dark);
+}
+
+.navbar-custom {
+    background-color: var(--color-dark);
+}
+
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+    color: #fff !important;
+}
+
+.navbar-custom .nav-link:hover {
+    color: var(--color-sand) !important;
+}
+
+.btn-primary-custom {
+    background-color: var(--color-brown);
+    border-color: var(--color-brown);
+    color: #fff;
+}
+
+.btn-primary-custom:hover {
+    background-color: var(--color-dark);
+    border-color: var(--color-dark);
+    color: #fff;
+}
+
+.btn-outline-custom {
+    border-color: var(--color-green);
+    color: var(--color-green);
+}
+
+.btn-outline-custom:hover {
+    background-color: var(--color-green);
+    color: #fff;
+}
+
+.card-custom {
+    border: 1px solid rgba(78, 29, 4, 0.15);
+    box-shadow: 0 4px 12px rgba(78, 29, 4, 0.08);
+    border-radius: 16px;
+}
+
+.badge-custom {
+    background-color: var(--color-bluegray);
+}
+
+.text-accent {
+    color: var(--color-brown);
+}
+
+.bg-soft {
+    background-color: #fffaf3;
+}
+
+.footer-custom {
+    background-color: var(--color-dark);
+    color: #fff;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--color-brown);
+    box-shadow: 0 0 0 0.2rem rgba(173, 106, 52, 0.2);
+}
+
+.alert-custom {
+    border-radius: 12px;
+}
