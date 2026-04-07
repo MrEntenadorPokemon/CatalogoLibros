@@ -3,85 +3,116 @@
 {% block title %}Detalle: {{ book.title }}{% endblock %}
 
 {% block content %}
-<div class="row g-4">
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('catalog') }}" class="text-accent">Catálogo</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+    </ol>
+</nav>
+
+<div class="row g-5 mb-5">
     <div class="col-12 col-lg-4">
-        <div class="card shadow-sm border-0 overflow-hidden">
+        <div class="card card-custom border-0 shadow-lg sticky-top" style="top: 2rem;">
             {% if book.cover_url %}
-                <img src="{{ book.cover_url }}" class="img-fluid w-100" alt="Portada de {{ book.title }}" style="object-fit: cover; min-height: 400px;">
+                <img src="{{ book.cover_url }}" class="img-fluid rounded-top-4" alt="Portada de {{ book.title }}" style="width: 100%; object-fit: cover;">
             {% else %}
-                <div class="d-flex align-items-center justify-content-center bg-light" style="min-height: 400px;">
+                <div class="d-flex align-items-center justify-content-center bg-soft rounded-top-4" style="height: 500px;">
                     <span class="text-muted">Sin portada disponible</span>
                 </div>
             {% endif %}
+            
+            <div class="card-body p-4 text-center">
+                {% if book.is_available %}
+                    <span class="badge bg-success mb-3 px-3 py-2">Disponible</span>
+                    {% if session.get('user_id') %}
+                        <form method="POST" action="{{ url_for('borrow_book', book_id=book.idBook) }}">
+                            <button type="submit" class="btn btn-primary-custom w-100 py-2 fw-bold shadow-sm">
+                                <i class="bi bi-book me-2"></i>Solicitar préstamo
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info py-2 small border-0 mb-0">
+                            <a href="{{ url_for('login') }}" class="fw-bold text-accent">Inicia sesión</a> para prestar este libro.
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <span class="badge bg-danger mb-3 px-3 py-2">No disponible (Prestado)</span>
+                    <button class="btn btn-secondary w-100 py-2 disabled" disabled>Actualmente prestado</button>
+                {% endif %}
+            </div>
         </div>
     </div>
 
     <div class="col-12 col-lg-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <h1 class="h2 mb-3">{{ book.title }}</h1>
+        <div class="ps-lg-4">
+            <h1 class="display-5 fw-bold text-dark mb-2">{{ book.title }}</h1>
+            <p class="h4 text-muted mb-4">por <span class="text-accent fw-semibold">{{ book.author }}</span></p>
+            
+            <div class="d-flex flex-wrap gap-2 mb-5">
+                <span class="badge badge-custom text-white px-3 py-2 h6 mb-0">{{ book.genre }}</span>
+                {% if book.year %}
+                    <span class="badge bg-light text-dark border px-3 py-2 h6 mb-0">Año: {{ book.year }}</span>
+                {% endif %}
+                {% if book.publisher %}
+                    <span class="badge bg-light text-dark border px-3 py-2 h6 mb-0">Editorial: {{ book.publisher }}</span>
+                {% endif %}
+            </div>
 
-                <div class="row g-3">
-                    <div class="col-md-6"><p><strong>Autor:</strong> {{ book.author }}</p></div>
-                    <div class="col-md-6"><p><strong>Editorial:</strong> {{ book.publisher or 'N/A' }}</p></div>
-                    <div class="col-md-6"><p><strong>Año:</strong> {{ book.year or 'N/A' }}</p></div>
-                    <div class="col-md-6"><p><strong>Género:</strong> {{ book.genre }}</p></div>
-                    <div class="col-12">
-                        <strong>Disponibilidad:</strong>
-                        {% if book.is_available %}
-                            <span class="badge bg-success">Disponible</span>
-                        {% else %}
-                            <span class="badge bg-danger">No disponible</span>
+            <section class="mb-5">
+                <h3 class="h4 fw-bold mb-3 border-bottom pb-2">Sinopsis</h3>
+                <p class="lead-sm text-dark lh-lg" style="text-align: justify;">
+                    {{ book.synopsis or 'No hay una sinopsis disponible para este título en este momento.' }}
+                </p>
+            </section>
+
+            <section id="reviews" class="mb-5">
+                <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-2">
+                    <h3 class="h4 fw-bold mb-0">Reseñas de la comunidad</h3>
+                    <div class="h5 mb-0">
+                        {% if avg_rating %}
+                            <span class="text-warning">★</span> <span class="fw-bold">{{ "%.1f"|format(avg_rating) }}</span> <small class="text-muted">/ 5</small>
                         {% endif %}
                     </div>
                 </div>
 
-                <hr>
-                <h5>Sinopsis</h5>
-                <p>{{ book.synopsis or 'No hay sinopsis disponible.' }}</p>
-
-                <hr>
-                <h5>Calificación promedio</h5>
-                <p>
-                    {% if avg_rating %}
-                        <span class="text-warning">★</span> {{ "%.1f"|format(avg_rating) }} / 5
-                    {% else %}
-                        <span class="text-muted">Sin calificaciones todavía</span>
-                    {% endif %}
-                </p>
-
-                <div class="d-flex gap-2 my-4">
-                    {% if session.get('user_id') and book.is_available %}
-                        <form method="POST" action="{{ url_for('borrow_book', book_id=book.idBook) }}">
-                            <button type="submit" class="btn btn-primary">Solicitar préstamo</button>
-                        </form>
-                    {% endif %}
-                    <a href="#reviews" class="btn btn-outline-secondary">Ver reseñas</a>
-                </div>
-
-                <div id="reviews" class="mt-5">
-                    <h5 class="border-bottom pb-2">Reseñas de usuarios</h5>
-                    {% if reviews %}
-                        <div class="list-group list-group-flush">
-                            {% for review in reviews %}
-                                <div class="list-group-item px-0">
-                                    <div class="d-flex justify-content-between">
-                                        <h6 class="mb-1">{{ review.user_name }}</h6>
-                                        <small class="text-muted">{{ review.created_at }}</small>
+                {% if reviews %}
+                    <div class="vstack gap-4">
+                        {% for review in reviews %}
+                            <div class="card card-custom border-0 bg-soft shadow-sm p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-accent text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            {{ review.user_name[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ review.user_name }}</h6>
+                                            <small class="text-muted">{{ review.created_at }}</small>
+                                        </div>
                                     </div>
-                                    <div class="text-warning mb-1">
+                                    <div class="text-warning">
                                         {% for i in range(review.rating|int) %}★{% endfor %}
                                     </div>
-                                    <p class="mb-1 small">{{ review.comment }}</p>
                                 </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted small">Sé el primero en escribir una reseña.</p>
-                    {% endif %}
-                </div>
-            </div>
+                                <p class="mb-0 text-dark small mt-2 fst-italic">"{{ review.comment }}"</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 bg-light rounded-4">
+                        <p class="text-muted mb-0">Todavía no hay reseñas. ¡Sé el primero en compartir tu opinión!</p>
+                    </div>
+                {% endif %}
+            </section>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .bg-accent { background-color: var(--color-brown); }
+    .sticky-top { transition: all 0.3s ease; }
+    .rounded-top-4 { border-top-left-radius: 16px; border-top-right-radius: 16px; }
+    .rounded-4 { border-radius: 16px; }
+</style>
 {% endblock %}

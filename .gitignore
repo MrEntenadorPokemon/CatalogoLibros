@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Bases de datos (se usa schema.sql para recrearla)
+*.sqlite
+*.db
+
+# Entorno y Secretos
+.env
+.flaskenv
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Distribución / Paquetes
+dist/
+build/
+*.egg-info/

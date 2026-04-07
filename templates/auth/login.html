@@ -1,9 +1,3 @@
-<!--
-formulario de login:
-email
-contraseña
-cerrar sesión (HU03)
--->
 {% extends "base.html" %}
 
 {% block title %}Iniciar sesión{% endblock %}
@@ -11,24 +5,34 @@ cerrar sesión (HU03)
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-5">
-        <div class="card card-custom bg-soft">
+        <div class="card card-custom bg-soft shadow">
             <div class="card-body p-4 p-md-5">
-                <h1 class="h3 text-center mb-4 text-accent">Iniciar sesión</h1>
+                <h1 class="h3 text-center mb-4 text-accent">¡Hola de nuevo!</h1>
+                <p class="text-center text-muted mb-4 small">Ingresa tus credenciales para continuar.</p>
 
-                <form method="POST" action="{{ url_for('login') }}">
+                <form method="POST" action="{{ url_for('login') }}" novalidate>
+                    {{ form.hidden_tag() }}
+
                     <div class="mb-3">
-                        <label for="email" class="form-label">Correo electrónico</label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com" required>
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="correo@ejemplo.com") }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="********" required>
+                    <div class="mb-4">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="********") }}
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary-custom">Entrar</button>
-                        <a href="{{ url_for('register') }}" class="btn btn-outline-custom">Crear cuenta</a>
+                        {{ form.submit(class="btn btn-primary-custom py-2 fw-bold") }}
+                        <hr class="my-3">
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-custom">¿Aún no tienes cuenta? Regístrate</a>
                     </div>
                 </form>
             </div>
