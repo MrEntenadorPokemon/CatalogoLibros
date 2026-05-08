@@ -5,14 +5,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from data import (
     RegisterForm, LoginForm, SearchBookForm, LoanForm, ReturnLoanForm,
-    ReviewForm, DeleteForm,
+    ReviewForm, DeleteForm, BookForm,
     get_user_by_email, create_user,
-    get_all_books, get_book_by_id, get_book_genres,
+    get_all_books, get_book_by_id, get_book_genres, get_book_authors, get_book_publishers,
     get_book_reviews, get_average_rating,
     create_loan, get_active_loan, return_loan,
     has_user_borrowed_book, get_review_by_user_and_book,
     create_review, update_review, delete_review,
-    get_user_loan_history, get_dashboard_stats
+    get_user_loan_history, get_dashboard_stats,
+    create_book, update_book, delete_book
 )
 
 app = Flask(__name__)
@@ -89,16 +90,41 @@ def logout():
 # =========================================================
 @app.route("/catalog")
 def catalog():
+    # Parámetros básicos
     query = request.args.get("q", "").strip()
     genre = request.args.get("genre", "").strip()
+    available = request.args.get("available", "0") == "1"
+    sort_by = request.args.get("sort", "title_asc")
 
-    books = get_all_books(query=query or None, genre=genre or None)
+    # Parámetros avanzados
+    author = request.args.get("author", "").strip()
+    publisher = request.args.get("publisher", "").strip()
+    year_min = request.args.get("year_min", type=int)
+    year_max = request.args.get("year_max", type=int)
+    min_rating = request.args.get("min_rating", type=float)
+
+    books = get_all_books(
+        query=query or None,
+        genre=genre or None,
+        author=author or None,
+        publisher=publisher or None,
+        year_min=year_min,
+        year_max=year_max,
+        min_rating=min_rating,
+        available_only=available,
+        sort_by=sort_by
+    )
+    
     genres = get_book_genres()
+    authors = get_book_authors()
+    publishers = get_book_publishers()
 
     return render_template(
         "books/catalog.html",
         books=books,
-        genres=genres
+        genres=genres,
+        authors=authors,
+        publishers=publishers
     )
 
 
@@ -135,22 +161,25 @@ def borrow_book(book_id):
     if book is None:
         abort(404)
 
+    # 1. Verificar si el libro está disponible físicamente
     if not book["is_available"]:
-        flash("Este libro no está disponible actualmente.", "danger")
+        flash(f'El libro "{book["title"]}" no está disponible actualmente.', "danger")
         return redirect(url_for("book_detail", book_id=book_id))
 
+    # 2. Verificar si el usuario ya tiene este mismo libro en préstamo activo
     active_loan = get_active_loan(session["user_id"], book_id)
     if active_loan:
-        flash("Ya tienes un préstamo activo para este libro.", "warning")
-        return redirect(url_for("book_detail", book_id=book_id))
+        flash(f'Ya tienes un préstamo activo para "{book["title"]}". Revisa tu historial.', "info")
+        return redirect(url_for("loan_history"))
 
     try:
         create_loan(session["user_id"], book_id)
-        flash("Préstamo solicitado correctamente.", "success")
-    except Exception:
-        flash("No se pudo registrar el préstamo.", "danger")
-
-    return redirect(url_for("book_detail", book_id=book_id))
+        flash(f'¡Préstamo de "{book["title"]}" registrado con éxito! Disfruta tu lectura.', "success")
+        return redirect(url_for("loan_history"))
+    except Exception as e:
+        app.logger.error(f"Error al crear préstamo: {e}")
+        flash("Hubo un problema al procesar tu solicitud. Inténtalo de nuevo.", "danger")
+        return redirect(url_for("book_detail", book_id=book_id))
 
 
 @app.route("/loans/history")
@@ -241,7 +270,7 @@ def remove_review(review_id):
 
 
 # =========================================================
-# DASHBOARD
+# DASHBOARD / GESTIÓN ADMIN
 # =========================================================
 @app.route("/admin/dashboard")
 def dashboard():
@@ -250,6 +279,85 @@ def dashboard():
 
     stats = get_dashboard_stats()
     return render_template("admin/dashboard.html", stats=stats)
+
+
+@app.route("/admin/books")
+def admin_books():
+    if not session.get("user_id") or session.get("user_role") != "admin":
+        abort(403)
+
+    query = request.args.get("q", "").strip()
+    books = get_all_books(query=query or None)
+    return render_template("admin/books_list.html", books=books)
+
+
+@app.route("/admin/books/add", methods=["GET", "POST"])
+def add_book():
+    if not session.get("user_id") or session.get("user_role") != "admin":
+        abort(403)
+
+    form = BookForm()
+    if form.validate_on_submit():
+        create_book(
+            title=form.title.data.strip(),
+            author=form.author.data.strip(),
+            genre=form.genre.data.strip(),
+            publisher=form.publisher.data.strip() if form.publisher.data else None,
+            year=form.year.data,
+            synopsis=form.synopsis.data.strip(),
+            cover_url=form.cover_url.data.strip() if form.cover_url.data else None,
+            is_available=form.is_available.data
+        )
+        flash("Libro agregado correctamente.", "success")
+        return redirect(url_for("admin_books"))
+
+    return render_template("admin/book_form.html", form=form, title="Agregar Libro")
+
+
+@app.route("/admin/books/<int:book_id>/edit", methods=["GET", "POST"])
+def edit_book(book_id):
+    if not session.get("user_id") or session.get("user_role") != "admin":
+        abort(403)
+
+    book = get_book_by_id(book_id)
+    if book is None:
+        abort(404)
+
+    form = BookForm(obj=book)
+    # WTForms doesn't automatically map database row (sqlite3.Row) to BooleanField correctly sometimes if it's 0/1
+    if request.method == "GET":
+        form.is_available.data = bool(book["is_available"])
+
+    if form.validate_on_submit():
+        update_book(
+            book_id=book_id,
+            title=form.title.data.strip(),
+            author=form.author.data.strip(),
+            genre=form.genre.data.strip(),
+            publisher=form.publisher.data.strip() if form.publisher.data else None,
+            year=form.year.data,
+            synopsis=form.synopsis.data.strip(),
+            cover_url=form.cover_url.data.strip() if form.cover_url.data else None,
+            is_available=form.is_available.data
+        )
+        flash("Libro actualizado correctamente.", "success")
+        return redirect(url_for("admin_books"))
+
+    return render_template("admin/book_form.html", form=form, title="Editar Libro", book=book)
+
+
+@app.route("/admin/books/<int:book_id>/delete", methods=["POST"])
+def remove_book(book_id):
+    if not session.get("user_id") or session.get("user_role") != "admin":
+        abort(403)
+
+    try:
+        delete_book(book_id)
+        flash("Libro eliminado correctamente.", "success")
+    except Exception:
+        flash("No se pudo eliminar el libro. Puede que tenga préstamos o reseñas asociados.", "danger")
+
+    return redirect(url_for("admin_books"))
 
 
 # =========================================================

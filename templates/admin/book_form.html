@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 col-md-8 mx-auto">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_books') }}">Gestión de Libros</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold text-dark">{{ title }}</h1>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-12 col-md-8 mx-auto">
+        <div class="card card-custom bg-white border-0 shadow-sm p-4">
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.title.label }}</label>
+                            {{ form.title(class="form-control", placeholder="Ej: Cien años de soledad") }}
+                            {% if form.title.errors %}
+                                {% for error in form.title.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.author.label }}</label>
+                            {{ form.author(class="form-control", placeholder="Ej: Gabriel García Márquez") }}
+                            {% if form.author.errors %}
+                                {% for error in form.author.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.genre.label }}</label>
+                            {{ form.genre(class="form-control", placeholder="Ej: Realismo Mágico") }}
+                            {% if form.genre.errors %}
+                                {% for error in form.genre.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12 col-md-8">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.publisher.label }}</label>
+                            {{ form.publisher(class="form-control", placeholder="Ej: Editorial Sudamericana") }}
+                            {% if form.publisher.errors %}
+                                {% for error in form.publisher.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.year.label }}</label>
+                            {{ form.year(class="form-control", placeholder="Ej: 1967") }}
+                            {% if form.year.errors %}
+                                {% for error in form.year.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.cover_url.label }}</label>
+                            {{ form.cover_url(class="form-control", placeholder="https://ejemplo.com/portada.jpg") }}
+                            <div class="form-text smaller">URL directa a la imagen de la portada.</div>
+                            {% if form.cover_url.errors %}
+                                {% for error in form.cover_url.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.synopsis.label }}</label>
+                            {{ form.synopsis(class="form-control", rows="5", placeholder="Resumen del contenido del libro...") }}
+                            {% if form.synopsis.errors %}
+                                {% for error in form.synopsis.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch bg-soft p-3 rounded border">
+                                {{ form.is_available(class="form-check-input ms-0 me-3") }}
+                                <label class="form-check-label fw-bold" for="is_available">Libro disponible para préstamo inmediato</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-5 pt-3 border-top d-flex justify-content-between">
+                            <a href="{{ url_for('admin_books') }}" class="btn btn-outline-secondary px-4 py-2">Cancelar</a>
+                            {{ form.submit(class="btn btn-primary-custom px-5 py-2 fw-bold") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

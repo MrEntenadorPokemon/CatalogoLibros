@@ -247,7 +247,33 @@ def get_book_genres():
     return [row["genre"] for row in rows]
 
 
-def get_all_books(query=None, genre=None):
+def get_book_authors():
+    rows = fetch_all(
+        """
+        SELECT DISTINCT author
+        FROM books
+        WHERE author IS NOT NULL AND author != ''
+        ORDER BY author
+        """
+    )
+    return [row["author"] for row in rows]
+
+
+def get_book_publishers():
+    rows = fetch_all(
+        """
+        SELECT DISTINCT publisher
+        FROM books
+        WHERE publisher IS NOT NULL AND publisher != ''
+        ORDER BY publisher
+        """
+    )
+    return [row["publisher"] for row in rows]
+
+
+def get_all_books(query=None, genre=None, author=None, publisher=None, 
+                  year_min=None, year_max=None, min_rating=None,
+                  available_only=False, sort_by="title_asc"):
     sql = """
         SELECT
             b.idBook,
@@ -275,13 +301,54 @@ def get_all_books(query=None, genre=None):
         conditions.append("b.genre = ?")
         params.append(genre)
 
-    if conditions:
-        sql += " WHERE " + " AND ".join(conditions)
+    if author:
+        conditions.append("b.author = ?")
+        params.append(author)
 
-    sql += """
-        GROUP BY b.idBook
-        ORDER BY b.title ASC
-    """
+    if publisher:
+        conditions.append("b.publisher = ?")
+        params.append(publisher)
+
+    if year_min:
+        conditions.append("b.year >= ?")
+        params.append(year_min)
+    
+    if year_max:
+        conditions.append("b.year <= ?")
+        params.append(year_max)
+
+    if available_only:
+        conditions.append("b.is_available = 1")
+
+    sql += " GROUP BY b.idBook "
+    
+    # El filtro de rating se aplica después del GROUP BY usando HAVING
+    having_conditions = []
+    if min_rating:
+        having_conditions.append("AVG(r.rating) >= ?")
+        params.append(min_rating)
+
+    if conditions:
+        sql = sql.replace(" GROUP BY b.idBook ", " WHERE " + " AND ".join(conditions) + " GROUP BY b.idBook ")
+
+    if having_conditions:
+        sql += " HAVING " + " AND ".join(having_conditions)
+
+    # Ordenamiento
+    if sort_by == "title_asc":
+        sql += " ORDER BY b.title ASC "
+    elif sort_by == "title_desc":
+        sql += " ORDER BY b.title DESC "
+    elif sort_by == "rating_desc":
+        sql += " ORDER BY avg_rating DESC, b.title ASC "
+    elif sort_by == "year_desc":
+        sql += " ORDER BY b.year DESC, b.title ASC "
+    elif sort_by == "year_asc":
+        sql += " ORDER BY b.year ASC, b.title ASC "
+    elif sort_by == "newest":
+        sql += " ORDER BY b.idBook DESC "
+    else:
+        sql += " ORDER BY b.title ASC "
 
     return fetch_all(sql, tuple(params))
 
@@ -339,6 +406,43 @@ def get_average_rating(book_id):
 def count_books():
     row = fetch_one("SELECT COUNT(*) AS total FROM books")
     return row["total"] if row else 0
+
+
+def create_book(title, author, genre, publisher, year, synopsis, cover_url, is_available=True):
+    execute_query(
+        """
+        INSERT INTO books (title, author, genre, publisher, year, synopsis, cover_url, is_available)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (title, author, genre, publisher, year, synopsis, cover_url, 1 if is_available else 0),
+        commit=True
+    )
+
+
+def update_book(book_id, title, author, genre, publisher, year, synopsis, cover_url, is_available):
+    execute_query(
+        """
+        UPDATE books
+        SET title = ?,
+            author = ?,
+            genre = ?,
+            publisher = ?,
+            year = ?,
+            synopsis = ?,
+            cover_url = ?,
+            is_available = ?
+        WHERE idBook = ?
+        """,
+        (title, author, genre, publisher, year, synopsis, cover_url, 1 if is_available else 0, book_id),
+        commit=True
+    )
+
+
+def delete_book(book_id):
+    # Nota: La base de datos tiene llaves foráneas activadas. 
+    # Si hay préstamos o reseñas vinculadas, se debe decidir si borrar en cascada o impedir el borrado.
+    # Por ahora simplemente intentamos borrar.
+    execute_query("DELETE FROM books WHERE idBook = ?", (book_id,), commit=True)
 
 
 def get_top_rated_books(limit=5):
